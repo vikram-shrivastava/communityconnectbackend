@@ -8,7 +8,7 @@ export const sendVerificationEmail = async (email, username, verifycode) => {
     const transport = nodemailer.createTransport({
       service: "gmail",
       secure: true,
-      port: 465,
+      port: 587,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
