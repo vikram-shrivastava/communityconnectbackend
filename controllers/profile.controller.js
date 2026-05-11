@@ -227,3 +227,15 @@ export const getUserProfile = asynchandler(async (req, res) => {
         new handleresponse(200, sanitizedProfile, "User profile fetched successfully")
     );
 });
+
+// ==========================================
+// 7. GET TOTAL MEMBERS COUNT
+// ==========================================
+export const getTotalMembers = asynchandler(async (req, res) => {
+    // Count all profile documents to see how many people have joined
+    const count = await Profile.countDocuments();
+
+    return res.status(200).json(
+        new handleresponse(200, { totalMembers: count }, "Total members fetched successfully")
+    );
+});
