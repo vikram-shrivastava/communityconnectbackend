@@ -97,16 +97,25 @@ export const toggleCampaignStatus = asynchandler(async (req, res) => {
 // ==========================================
 export const recordAdImpression = asynchandler(async (req, res) => {
     const { campaignId } = req.params;
+    
+    // Define cost: 50 paise (₹0.50) per view
+    const COST_PER_IMPRESSION = 0.50; 
 
-    // Called silently by the frontend when the ad scrolls into view
-    // Using $inc is extremely fast and avoids race conditions
-    await Campaign.findByIdAndUpdate(
+    // Find and update in one fast atomic operation
+    const campaign = await Campaign.findByIdAndUpdate(
         campaignId,
-        { $inc: { totalImpressions: 1 } }
+        { $inc: { totalImpressions: 1, spentBudget: COST_PER_IMPRESSION } },
+        { new: true } // Returns the updated document so we can check the budget
     );
 
+    // Auto-Pause logic: If they spent their whole budget, pause the ad!
+    if (campaign && campaign.spentBudget >= campaign.budget && campaign.isActive) {
+        campaign.isActive = false;
+        await campaign.save();
+    }
+
     return res.status(200).json(
-        new handleresponse(200, null, "Ad impression recorded")
+        new handleresponse(200, null, "Ad impression & cost recorded")
     );
 });
 
@@ -116,13 +125,22 @@ export const recordAdImpression = asynchandler(async (req, res) => {
 export const recordAdClick = asynchandler(async (req, res) => {
     const { campaignId } = req.params;
 
-    // Called when a user taps the ad to learn more
-    await Campaign.findByIdAndUpdate(
+    // Define cost: ₹5.00 per click
+    const COST_PER_CLICK = 5.00;
+
+    const campaign = await Campaign.findByIdAndUpdate(
         campaignId,
-        { $inc: { totalClicks: 1 } }
+        { $inc: { totalClicks: 1, spentBudget: COST_PER_CLICK } },
+        { new: true }
     );
 
+    // Auto-Pause logic
+    if (campaign && campaign.spentBudget >= campaign.budget && campaign.isActive) {
+        campaign.isActive = false;
+        await campaign.save();
+    }
+
     return res.status(200).json(
-        new handleresponse(200, null, "Ad click recorded")
+        new handleresponse(200, null, "Ad click & cost recorded")
     );
 });

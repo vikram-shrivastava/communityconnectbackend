@@ -46,38 +46,37 @@ export const getFeed = asynchandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(); // .lean() makes it a plain JS object, faster to process
+        .lean(); 
 
     // 2. Fetch Sponsored Posts (Ads) - pull 2 ads per page
     const userProfile = await Profile.findOne({ user: req.user._id }).select("dob gender");
 
-    // 🌟 FIX 1: Safe Age Fallback. If DOB is missing, default to 25 so ads still appear!
-    let userAge = calculateAge(userProfile?.dob);
-    if (!userAge || isNaN(userAge)) {
-        userAge = 25; 
+    // 🌟 FIX 1: Extremely Safe Fallbacks for Age and Gender
+    let userAge = 25; // Default age so ads still show if DOB is missing
+    if (userProfile && userProfile.dob) {
+        const calculated = calculateAge(userProfile.dob);
+        if (!isNaN(calculated)) userAge = calculated;
     }
-    const userGender = userProfile?.gender || "all";
+    const userGender = userProfile?.gender?.toLowerCase() || "all";
 
     // 2. Fetch Targeted Sponsored Posts (The Recommendation Engine)
     const activeCampaigns = await Campaign.find({
-        isActive: true,
-        // Match gender (either specific to them, or ads targeting 'all')
-        "targetAudience.gender": { $in: [userGender, "all"] },
-        // Match age range
+        isActive: true, 
+        "targetAudience.gender": { $in: [userGender, "all", "ALL", "All"] }, // 🌟 FIX 2: Case insensitive
         "targetAudience.ageRange.min": { $lte: userAge },
         "targetAudience.ageRange.max": { $gte: userAge }
     })
+        .sort({ createdAt: -1 }) // 🌟 FIX 3: CRITICAL! Ensures newest ads show on page 1
         .populate({
             path: "post",
             populate: { path: "user", select: "name profilePicture isVerified" }
         })
-        .skip((page - 1) * 2) // Paginating the ads
+        .skip((page - 1) * 2) 
         .limit(2)
         .lean();
 
-    // 🌟 FIX 2: Safely map ads in case the original sponsored post was deleted
     const adPosts = activeCampaigns.map(campaign => {
-        if (!campaign.post) return null; // Prevent crashes if post is missing
+        if (!campaign.post) return null; // Prevent crashes if original post was deleted
         return { ...campaign.post, isAd: true, campaignId: campaign._id };
     }).filter(Boolean);
 
@@ -88,7 +87,7 @@ export const getFeed = asynchandler(async (req, res) => {
     for (let i = 0; i < organicPosts.length; i++) {
         feed.push(organicPosts[i]);
         
-        // 🌟 FIX 3: Insert 1 ad for every 4 organic posts, OR if it's the very last organic post!
+        // Insert 1 ad for every 4 organic posts, OR if it's the very last organic post!
         if (((i + 1) % 4 === 0 || i === organicPosts.length - 1) && adIndex < adPosts.length) {
             feed.push(adPosts[adIndex]);
             adIndex++;
@@ -101,8 +100,7 @@ export const getFeed = asynchandler(async (req, res) => {
         adIndex++;
     }
 
-    // 4. (Optional but recommended) Check if the CURRENT user liked these posts
-    // This tells the frontend whether to show a red heart or empty heart
+    // 4. Check if the CURRENT user liked these posts
     const myLikes = await Like.find({
         user: req.user._id,
         post: { $in: feed.map(p => p._id) }
