@@ -1,28 +1,15 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { Resend } from 'resend';
 
-dotenv.config();
+// Initialize with your API key from the Resend dashboard
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, username, verifycode) => {
   try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 587,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      // 🌟 ADDED STRICT TIMEOUTS: Prevents the "infinite loading" bug in production
-      connectionTimeout: 10000, 
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-
-    const mailOptions = {
-      from: `Kayasth Connect <${process.env.EMAIL_USER}>`, // 🌟 FIXED BRANDING
-      to: email,
-      subject: "Kayasth Connect || Verification Code",
+    const { data, error } = await resend.emails.send({
+      // This must be a domain you own and verified in Resend
+      from: 'Kayasth Connect <onboarding@yourdomain.com>', 
+      to: [email],
+      subject: 'Kayasth Connect || Verification Code',
       html: `
       <section style="font-family: Arial, sans-serif; color: #333;">
         <h2>Hello ${username},</h2>
@@ -31,21 +18,18 @@ export const sendVerificationEmail = async (email, username, verifycode) => {
         <p>If you did not request this code, please ignore this email.</p>
       </section>
       `,
-    };
-    
-    const mailResponse = await transport.sendMail(mailOptions);
-    console.log("Email sent successfully:", mailResponse.messageId);
+    });
 
-    return {
-      success: true,
-      message: "Verification email sent successfully",
-    };
+    if (error) {
+      console.error("Resend Error:", error);
+      return { success: false, message: "Cannot send verification email" };
+    }
+
+    console.log("Email sent successfully:", data.id);
+    return { success: true, message: "Verification email sent successfully" };
+
   } catch (error) {
-    console.error("Error in sending verification email:", error.message || error);
-    
-    return {
-      success: false,
-      message: "Cannot send verification email",
-    };
+    console.error("Unexpected error sending email:", error);
+    return { success: false, message: "Cannot send verification email" };
   }
 }
