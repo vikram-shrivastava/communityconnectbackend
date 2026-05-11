@@ -10,7 +10,7 @@ import { Server } from "socket.io";
 import { Message } from "./models/message.model.js";
 
 const app = express();
-
+app.set("trust proxy", 1);
 // 2. Explicitly create the HTTP server using your Express app
 const server = http.createServer(app);
 

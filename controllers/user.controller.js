@@ -171,7 +171,7 @@ export const loginUser = asynchandler(async (req, res) => {
     const cookieOptions = {
         httpOnly: true, // Prevents XSS attacks (frontend JS can't read the cookie)
         secure: process.env.NODE_ENV === "production", // Must be true in production (HTTPS)
-        sameSite: "strict"
+        sameSite:process.env.NODE_ENV === "production" ? "none" : "strict"
     };
 
     // Send cookies AND json response
@@ -228,7 +228,7 @@ export const refreshAccessToken = asynchandler(async (req, res) => {
         const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
         };
 
         // 8. Send the new tokens to the client
