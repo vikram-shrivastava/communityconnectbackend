@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 const createInviteCode = async () => {
     let counter = await Counter.findOneAndUpdate(
         { id: "inviteCode" },
-        { $inc: { seq: 1 } },
+        { $inc: { seq: 131210 } },
         { new: true } 
     );
 
