@@ -16,7 +16,7 @@ const server = http.createServer(app);
 
 // 3. Attach Socket.io to the newly created HTTP server
 const io = new Server(server, {
-    cors: { origin: "*" } // Restrict this to your frontend URL in production
+    cors: { origin: process.env.CORS_ORIGIN } // Restrict this to your frontend URL in production
 });
 
 // We use a Map to keep track of which user is connected to which socket
@@ -64,7 +64,7 @@ io.on("connection", (socket) => {
 app.set("trust proxy", true);
 app.use(cors({
     // Remember to update the Resume Ranker domain to your new Kayasth Connect domain before launch
-    origin: ["http://localhost:3000","exp://192.168.1.100:8081", "https://resumeranker.vikramshrivastav.app"],
+    origin: [process.env.CORS_ORIGIN],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
