@@ -117,7 +117,7 @@ export const getMyInviteLink = asynchandler(async (req, res) => {
     const shareData = {
         inviteCode: user.myInviteCode,
         message: `Join our exclusive community! Use my code ${user.myInviteCode} to skip the waitlist.`,
-        url: `https://kayasthconnect.com/register?code=${user.myInviteCode}`
+        url: `https://communityconnectfrontend.vercel.app/register?code=${user.myInviteCode}`
     };
 
     return res.status(200).json(
