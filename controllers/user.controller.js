@@ -6,17 +6,14 @@ import { handleresponse } from "../utils/apiResponse.js";
 import { sendVerificationEmail } from "../utils/sendVerificationemail.js";
 import jwt from "jsonwebtoken";
 
-// Helper Function (Internal use only, no req/res)
-// Helper Function (Internal use only, no req/res)
+// Helper Function
 const createInviteCode = async () => {
-    // 1. Try to find and increment the existing counter
     let counter = await Counter.findOneAndUpdate(
         { id: "inviteCode" },
         { $inc: { seq: 1 } },
-        { new: true } // Notice we removed upsert: true here!
+        { new: true } 
     );
 
-    // 2. If it doesn't exist yet, create it with your exact starting number
     if (!counter) {
         counter = await Counter.create({ 
             id: "inviteCode", 
@@ -24,13 +21,12 @@ const createInviteCode = async () => {
         });
     }
 
-    // 3. Convert to Base36 string and return
-    const code = counter.seq.toString(36).toUpperCase();
+    // 🌟 FIXED: Removed .toString(36) to keep standard numbers!
+    const code = counter.seq.toString(); 
     return `KAY${code}`;
 };
 
 export const registerUser = asynchandler(async (req, res) => {
-    console.log("🔥 REGISTER ENDPOINT HIT WITH DATA:", req.body); // ADD THIS
     const { name, email, password, inviteCode } = req.body;
 
     if (!name || !password || !email) {
@@ -44,16 +40,14 @@ export const registerUser = asynchandler(async (req, res) => {
 
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Prepare User Object
     const userData = {
         name,
         email,
         password,
         verifyCode,
-        status: "waitlist" // Default status
+        status: "waitlist" 
     };
 
-    // If invite code provided, verify and approve
     if (inviteCode) {
         const inviter = await User.findOne({ myInviteCode: inviteCode.toUpperCase() });
         if (inviter) {
@@ -65,17 +59,21 @@ export const registerUser = asynchandler(async (req, res) => {
 
     const user = await User.create(userData);
 
-    // Send email AFTER creation so we don't send emails if DB fails
-    const emailResponse = await sendVerificationEmail(email, name, verifyCode);
-    if (!emailResponse.success) {
-        // Optional: Delete user if email fails, or just log it
-        console.error("Email failed:", emailResponse.message);
-        const deletedUser=await User.findByIdAndDelete(user._id);
-        throw new handleerror(500, "Registration failed. Please try again.");
+    // 🌟 FIXED: Strict Try/Catch to prevent server crashes on email timeout
+    try {
+        const emailResponse = await sendVerificationEmail(email, name, verifyCode);
+        if (!emailResponse.success) {
+            console.error("Email failed:", emailResponse.message);
+            await User.findByIdAndDelete(user._id);
+            return res.status(500).json(new handleresponse(500, null, "Email service failed. Please check production SMTP settings."));
+        }
+    } catch (emailError) {
+        console.error("Critical Email Error in Production:", emailError);
+        await User.findByIdAndDelete(user._id);
+        return res.status(500).json(new handleresponse(500, null, "Could not send verification email. Connection timed out."));
     }
 
     const createdUser = await User.findById(user._id).select("-password -verifyCode");
-
     return res.status(201).json(
         new handleresponse(201, createdUser, "User registered. Please verify your email.")
     );
