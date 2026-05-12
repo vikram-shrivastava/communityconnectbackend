@@ -7,21 +7,28 @@ import { sendVerificationEmail } from "../utils/sendVerificationemail.js";
 import jwt from "jsonwebtoken";
 
 // Helper Function
+// Helper Function (Self-Healing Version)
 const createInviteCode = async () => {
-    let counter = await Counter.findOneAndUpdate(
-        { id: "inviteCode" },
-        { $inc: { seq: 131210 } },
-        { new: true } 
-    );
+    // 1. First, just look at the current counter without changing it
+    let counter = await Counter.findOne({ id: "inviteCode" });
 
-    if (!counter) {
-        counter = await Counter.create({ 
-            id: "inviteCode", 
-            seq: 131204
-        });
+    // 2. If it doesn't exist, OR if it's corrupted (like being stuck at 18)
+    if (!counter || counter.seq < 131205) {
+        // FORCE the database to reset to your desired starting number
+        counter = await Counter.findOneAndUpdate(
+            { id: "inviteCode" },
+            { $set: { seq: 131205 } }, // 🌟 $set forces the exact number, ignoring the past
+            { new: true, upsert: true }
+        );
+    } else {
+        // 3. Normal behavior: If it's already a healthy big number, just add 1
+        counter = await Counter.findOneAndUpdate(
+            { id: "inviteCode" },
+            { $inc: { seq: 1 } }, 
+            { new: true }
+        );
     }
 
-    // 🌟 FIXED: Removed .toString(36) to keep standard numbers!
     const code = counter.seq.toString(); 
     return `KAY${code}`;
 };

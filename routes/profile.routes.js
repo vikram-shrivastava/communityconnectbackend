@@ -6,7 +6,8 @@ import {
     updateMatrimonyProfile, 
     deleteProfile, 
     getUserProfile,
-    getTotalMembers // ✅ ADDED: Missing import
+    getTotalMembers, // ✅ ADDED: Missing import
+    getMemberDirectory
 } from "../controllers/profile.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -21,11 +22,11 @@ router.route("/")
     .post(createProfile)
     .get(getMyProfile)
     .delete(deleteProfile);
-
+    
+router.route("/directory").get(getMemberDirectory);
 router.route("/update-general").patch(updateGeneralProfile);
 router.route("/update-matrimony").patch(updateMatrimonyProfile);
 
 // ✅ FIXED: Changed "/user/:userId" to "/:userId" to match the frontend API call
 router.route("/:userId").get(getUserProfile); 
-
 export default router;

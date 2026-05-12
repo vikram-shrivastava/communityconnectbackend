@@ -239,3 +239,17 @@ export const getTotalMembers = asynchandler(async (req, res) => {
         new handleresponse(200, { totalMembers: count }, "Total members fetched successfully")
     );
 });
+
+// ==========================================
+// 8. GET MEMBER DIRECTORY (Public Profiles)
+// ==========================================
+export const getMemberDirectory = asynchandler(async (req, res) => {
+    // Fetch all profiles, populate the user verification status, and sort by newest
+    const profiles = await Profile.find()
+        .populate("user", "isVerified status")
+        .sort({ createdAt: -1 });
+
+    return res.status(200).json(
+        new handleresponse(200, profiles, "Member directory fetched successfully")
+    );
+});

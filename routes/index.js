@@ -7,6 +7,7 @@ import campaignRouter from "./campaign.routes.js";
 import paymentRouter from "./payment.routes.js";
 import uploadRouter from "./upload.routes.js";
 import adminRouter from "./admin.routes.js";
+import communityRouter from "./community.routes.js"
 const rootRouter = Router();
 
 rootRouter.use("/auth", authRouter);
@@ -17,4 +18,5 @@ rootRouter.use("/campaigns", campaignRouter);
 rootRouter.use("/payments", paymentRouter);
 rootRouter.use("/upload", uploadRouter);
 rootRouter.use("/admin", adminRouter); 
+rootRouter.use("/community", communityRouter); // ✅ ADDED: Community routes
 export default rootRouter;
