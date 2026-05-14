@@ -67,7 +67,15 @@ const profileSchema = new Schema({
     // --- Professional Info (For Feed / Bio) ---
     employmentStatus: {
         type: String,
-        enum: ["employed", "unemployed", "student", "freelancer", "business"]
+        enum: ["employed", "unemployed", "student", "freelancer", "business","housewife", "retired","other"]
+    },
+    customEmploymentStatus:{
+        type: String,
+        trim: true,
+        required: function() {
+            return this.employmentStatus === "other";
+        },
+        maxlength: 50
     },
     designation: String,
     companyName: String,

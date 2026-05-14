@@ -23,6 +23,7 @@ export const createProfile = asynchandler(async (req, res) => {
         currentCity,
         gender,
         employmentStatus,
+        customEmploymentStatus,
         designation,
         companyName
     } = req.body;
@@ -39,6 +40,7 @@ export const createProfile = asynchandler(async (req, res) => {
         currentCity,
         gender,
         employmentStatus,
+        customEmploymentStatus,
         designation,
         companyName
     });
